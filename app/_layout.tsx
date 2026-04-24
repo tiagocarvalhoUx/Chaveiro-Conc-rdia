@@ -25,12 +25,14 @@ function RootStack() {
   useEffect(() => {
     if (loading) return;
 
-    const first = segments[0];
+    const first = segments[0] as string | undefined;
     const inIntro = first === "intro" || first === undefined;
     const inAuth = first === "(auth)";
     const inApp = first === "(app)";
+    // Não redirecionar quando já estiver no painel admin
+    const inAdmin = first === "(admin)";
 
-    if (!session && inApp) {
+    if (!session && (inApp || inAdmin)) {
       router.replace("/(auth)/login");
     } else if (session && (inAuth || inIntro)) {
       router.replace("/(app)/home");
@@ -49,6 +51,7 @@ function RootStack() {
       <Stack.Screen name="intro" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(app)" />
+      <Stack.Screen name="(admin)" />
     </Stack>
   );
 }

@@ -26,6 +26,7 @@ export type Database = {
           nome: string;
           telefone: string | null;
           endereco: string | null;
+          is_admin: boolean;
           created_at: string;
         };
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           nome: string;
           telefone?: string | null;
           endereco?: string | null;
+          is_admin?: boolean;
           created_at?: string;
         };
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           nome?: string;
           telefone?: string | null;
           endereco?: string | null;
+          is_admin?: boolean;
           created_at?: string;
         };
         Relationships: [];

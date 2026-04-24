@@ -36,14 +36,14 @@ export default function Root({ children }: PropsWithChildren) {
         <meta property="og:site_name" content="Chaveiro Concórdia" />
         <meta
           property="og:title"
-          content="Chaveiro Concórdia — Chaveiro 24h em Araçatuba/SP, ligue agora"
+          content="Chaveiro Concórdia — Atendimento 24h em Araçatuba/SP"
         />
         <meta
           property="og:description"
           content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves e fechaduras digitais. Chame: (18) 99102-0078."
         />
-        <meta property="og:url" content="https://chaveiro-conc-rdia.vercel.app/" />
-        <meta property="og:image" content="https://chaveiro-conc-rdia.vercel.app/og-image.png" />
+        <meta property="og:url" content="https://chaveiro-concordia.vercel.app/" />
+        <meta property="og:image" content="https://chaveiro-concordia.vercel.app/og-image.png" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -57,13 +57,13 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content="Chaveiro Concórdia — Chaveiro 24h em Araçatuba/SP, ligue agora"
+          content="Chaveiro Concórdia — Atendimento 24h em Araçatuba/SP"
         />
         <meta
           name="twitter:description"
           content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves e fechaduras digitais. Chame: (18) 99102-0078."
         />
-        <meta name="twitter:image" content="https://chaveiro-conc-rdia.vercel.app/og-image.png" />
+        <meta name="twitter:image" content="https://chaveiro-concordia.vercel.app/og-image.png" />
         <meta
           name="twitter:image:alt"
           content="Chaveiro Concórdia — 24h em Araçatuba/SP"
@@ -72,7 +72,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
-        <link rel="canonical" href="https://chaveiro-conc-rdia.vercel.app/" />
+        <link rel="canonical" href="https://chaveiro-concordia.vercel.app/" />
 
         <ScrollViewStyleReset />
 

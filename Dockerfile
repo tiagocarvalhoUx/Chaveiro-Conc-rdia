@@ -5,10 +5,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-# Usamos `npm install` (não `npm ci`) porque o lockfile pode ter dessincronia
-# transitiva ao ser gerado em Windows+OneDrive. `install` recomputa e segue.
-RUN npm install --no-audit --no-fund --loglevel=error
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
 COPY . .
 

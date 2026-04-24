@@ -30,7 +30,7 @@ function RootStack() {
     const inAuth = first === "(auth)";
     const inApp = first === "(app)";
     // Não redirecionar quando já estiver no painel admin
-    const inAdmin = first === "(admin)";
+    const inAdmin = first === "admin";
 
     if (!session && (inApp || inAdmin)) {
       router.replace("/(auth)/login");
@@ -51,7 +51,7 @@ function RootStack() {
       <Stack.Screen name="intro" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(app)" />
-      <Stack.Screen name="(admin)" />
+      <Stack.Screen name="admin" />
     </Stack>
   );
 }

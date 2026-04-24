@@ -19,8 +19,8 @@ const SIDEBAR_WIDTH = 236;
 const BREAKPOINT_DESKTOP = 768;
 
 const NAV_ITEMS = [
-  { label: "Dashboard", path: "/(admin)/", icon: "📊" },
-  { label: "Pedidos", path: "/(admin)/pedidos", icon: "📋" },
+  { label: "Dashboard", path: "/admin", icon: "📊" },
+  { label: "Pedidos", path: "/admin/pedidos", icon: "📋" },
 ] as const;
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -55,11 +55,10 @@ export function AdminShell({ children, newOrdersCount = 0 }: AdminShellProps) {
     Platform.OS === "web" && windowWidth >= BREAKPOINT_DESKTOP;
 
   function isActive(path: string) {
-    if (path === "/(admin)/") {
-      // Ativo apenas na raiz do admin, não em sub-rotas
-      return pathname === "/" || pathname === "/(admin)/" || pathname === "/admin/";
+    if (path === "/admin") {
+      return pathname === "/admin" || pathname === "/admin/";
     }
-    return pathname.includes("pedidos");
+    return pathname.startsWith(path);
   }
 
   // ── Sidebar (Desktop Web) ────────────────────────────────────────────────

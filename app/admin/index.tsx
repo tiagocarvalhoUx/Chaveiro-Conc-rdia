@@ -179,14 +179,14 @@ export default function AdminDashboard() {
           value={loading ? "—" : stats?.pendentes ?? 0}
           icon="⏳"
           color="#A1A1A1"
-          onPress={() => router.push("/(admin)/pedidos" as never)}
+          onPress={() => router.push("/admin/pedidos" as never)}
         />
         <StatCard
           label="Em andamento"
           value={loading ? "—" : stats?.emAtendimento ?? 0}
           icon="🔧"
           color="#FF6B35"
-          onPress={() => router.push("/(admin)/pedidos" as never)}
+          onPress={() => router.push("/admin/pedidos" as never)}
         />
       </View>
 
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
       {/* Ação rápida */}
       <TouchableOpacity
         style={styles.ctaBtn}
-        onPress={() => router.push("/(admin)/pedidos" as never)}
+        onPress={() => router.push("/admin/pedidos" as never)}
         activeOpacity={0.85}
       >
         <Text style={styles.ctaBtnText}>📋  Gerenciar todos os pedidos</Text>
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Pedidos recentes</Text>
-          <TouchableOpacity onPress={() => router.push("/(admin)/pedidos" as never)}>
+          <TouchableOpacity onPress={() => router.push("/admin/pedidos" as never)}>
             <Text style={styles.sectionLink}>Ver todos →</Text>
           </TouchableOpacity>
         </View>
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
               <PedidoRecenteCard
                 key={p.id}
                 pedido={p}
-                onPress={() => router.push("/(admin)/pedidos" as never)}
+                onPress={() => router.push("/admin/pedidos" as never)}
               />
             ))}
           </View>

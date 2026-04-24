@@ -25,12 +25,40 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="application-name" content="Chaveiro Concórdia" />
         <meta
           name="description"
-          content="Chaveiro 24h em Araçatuba/SP. Automóveis, Empresa e Residência. (18) 99102-0078"
+          content="Chaveiro Concórdia — Atendimento 24h em Araçatuba/SP. Abertura de veículos, fechaduras digitais e emergências para automóveis, empresa e residência."
         />
+        <meta name="keywords" content="chaveiro, chaveiro 24 horas, Araçatuba, abertura de carro, fechadura digital, chave de carro, chaveiro automotivo, emergência" />
+        <meta name="author" content="Chaveiro Concórdia" />
+        <meta name="robots" content="index, follow" />
+
+        {/* Open Graph (Facebook, WhatsApp, LinkedIn, Discord) */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Chaveiro Concórdia" />
+        <meta property="og:title" content="Chaveiro Concórdia — 24h em Araçatuba/SP" />
+        <meta
+          property="og:description"
+          content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves, codificação de telecomandos e fechaduras digitais. Ligue (18) 99102-0078."
+        />
+        <meta property="og:url" content="https://chaveiro-conc-rdia.vercel.app/" />
+        <meta property="og:image" content="https://chaveiro-conc-rdia.vercel.app/icon-512.png" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
+        <meta property="og:image:alt" content="Logo Chaveiro Concórdia" />
+        <meta property="og:locale" content="pt_BR" />
+
+        {/* Twitter Cards */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Chaveiro Concórdia — 24h em Araçatuba/SP" />
+        <meta
+          name="twitter:description"
+          content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves, fechaduras digitais e emergências. (18) 99102-0078."
+        />
+        <meta name="twitter:image" content="https://chaveiro-conc-rdia.vercel.app/icon-512.png" />
 
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="canonical" href="https://chaveiro-conc-rdia.vercel.app/" />
 
         <ScrollViewStyleReset />
 

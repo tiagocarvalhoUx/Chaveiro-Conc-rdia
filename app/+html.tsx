@@ -25,7 +25,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="application-name" content="Chaveiro Concórdia" />
         <meta
           name="description"
-          content="Chaveiro Concórdia — Atendimento 24h em Araçatuba/SP. Abertura de veículos, fechaduras digitais e emergências para automóveis, empresa e residência."
+          content="Chaveiro 24h em Araçatuba/SP. Abertura de veículos, residências e empresas, cópia de chaves e fechaduras digitais. (18) 99102-0078."
         />
         <meta name="keywords" content="chaveiro, chaveiro 24 horas, Araçatuba, abertura de carro, fechadura digital, chave de carro, chaveiro automotivo, emergência" />
         <meta name="author" content="Chaveiro Concórdia" />
@@ -34,26 +34,40 @@ export default function Root({ children }: PropsWithChildren) {
         {/* Open Graph (Facebook, WhatsApp, LinkedIn, Discord) */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Chaveiro Concórdia" />
-        <meta property="og:title" content="Chaveiro Concórdia — 24h em Araçatuba/SP" />
+        <meta
+          property="og:title"
+          content="Chaveiro Concórdia — Chaveiro 24h em Araçatuba/SP, ligue agora"
+        />
         <meta
           property="og:description"
-          content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves, codificação de telecomandos e fechaduras digitais. Ligue (18) 99102-0078."
+          content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves e fechaduras digitais. Chame: (18) 99102-0078."
         />
         <meta property="og:url" content="https://chaveiro-conc-rdia.vercel.app/" />
-        <meta property="og:image" content="https://chaveiro-conc-rdia.vercel.app/icon-512.png" />
-        <meta property="og:image:width" content="512" />
-        <meta property="og:image:height" content="512" />
-        <meta property="og:image:alt" content="Logo Chaveiro Concórdia" />
+        <meta property="og:image" content="https://chaveiro-conc-rdia.vercel.app/og-image.png" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+          property="og:image:alt"
+          content="Chaveiro Concórdia — 24h em Araçatuba/SP — (18) 99102-0078"
+        />
         <meta property="og:locale" content="pt_BR" />
 
         {/* Twitter Cards */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Chaveiro Concórdia — 24h em Araçatuba/SP" />
+        <meta
+          name="twitter:title"
+          content="Chaveiro Concórdia — Chaveiro 24h em Araçatuba/SP, ligue agora"
+        />
         <meta
           name="twitter:description"
-          content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves, fechaduras digitais e emergências. (18) 99102-0078."
+          content="Atendimento 24 horas para abertura de veículos, residências e empresas. Cópia de chaves e fechaduras digitais. Chame: (18) 99102-0078."
         />
-        <meta name="twitter:image" content="https://chaveiro-conc-rdia.vercel.app/icon-512.png" />
+        <meta name="twitter:image" content="https://chaveiro-conc-rdia.vercel.app/og-image.png" />
+        <meta
+          name="twitter:image:alt"
+          content="Chaveiro Concórdia — 24h em Araçatuba/SP"
+        />
 
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />

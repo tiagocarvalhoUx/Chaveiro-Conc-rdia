@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   Animated,
   Easing,
@@ -14,169 +14,176 @@ import { BRAND } from "@/lib/constants";
 
 interface EmergencyFABProps {
   bottom?: number;
-  extended?: boolean;
+  variant?: "extended" | "compact";
 }
 
-const BUTTON_SIZE = 58;
-const WHATSAPP_GREEN = "#25D366";
-const WHATSAPP_GREEN_DARK = "#1FAD54";
+const RED = "#DC2626";
+const RED_DARK = "#991B1B";
+const RED_LIGHT = "#EF4444";
 
 /**
- * FAB de emergência (WhatsApp).
- * - Anel de pulse que se expande sem deformar o botão
- * - Gradiente suave (verde claro → escuro) para profundidade
- * - Estado pressed com feedback visual (escala + cor mais escura)
- * - Label "Emergência 24h" opcional em tela larga
+ * FAB de emergência — vermelha estendida, com:
+ * - "Breath" sutil (scale 1.0 ↔ 1.04) — chama atenção sem ser agressivo
+ * - Glow vermelho pulsante via box-shadow animado (sem anéis "quadrados")
+ * - Bolinha branca interna piscando ("dot ativo" estilo notification)
+ * - Press feedback: shrink 0.94 + cor mais escura
+ * - Variante "compact" se quiser só o círculo (mantém o pulse)
  */
 export function EmergencyFAB({
   bottom = 90,
-  extended = false,
+  variant = "extended",
 }: EmergencyFABProps) {
-  const pressScale = useRef(new Animated.Value(1)).current;
-  const ring1 = useRef(new Animated.Value(0)).current;
-  const ring2 = useRef(new Animated.Value(0)).current;
-  const [pressed, setPressed] = useState(false);
+  const breath = useRef(new Animated.Value(0)).current;
+  const dot = useRef(new Animated.Value(0)).current;
+  const press = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const pulse = (value: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(value, {
-            toValue: 1,
-            duration: 2000,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(value, {
-            toValue: 0,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    const a = pulse(ring1, 0);
-    const b = pulse(ring2, 1000);
-    a.start();
-    b.start();
-    return () => {
-      a.stop();
-      b.stop();
-    };
-  }, [ring1, ring2]);
-
-  const renderRing = (anim: Animated.Value) => {
-    const scale = anim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [1, 2],
-    });
-    const opacity = anim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.45, 0],
-    });
-    return (
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          width: BUTTON_SIZE,
-          height: BUTTON_SIZE,
-          borderRadius: BUTTON_SIZE / 2,
-          backgroundColor: WHATSAPP_GREEN,
-          opacity,
-          transform: [{ scale }],
-        }}
-      />
+    const breathLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, {
+          toValue: 1,
+          duration: 1400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(breath, {
+          toValue: 0,
+          duration: 1400,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
     );
-  };
+    const dotLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(dot, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dot, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    breathLoop.start();
+    dotLoop.start();
+    return () => {
+      breathLoop.stop();
+      dotLoop.stop();
+    };
+  }, [breath, dot]);
 
-  const shadowStyle =
-    Platform.OS === "web"
-      ? ({
-          boxShadow:
-            "0 12px 24px rgba(37,211,102,0.45), 0 6px 10px rgba(0,0,0,0.18)",
-        } as unknown as object)
-      : {
-          shadowColor: WHATSAPP_GREEN,
-          shadowOpacity: 0.45,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 8,
-        };
+  const scale = Animated.multiply(
+    press,
+    breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] })
+  );
+  const dotOpacity = dot.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.35, 1],
+  });
+  const glowOpacity = breath.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.45, 0.85],
+  });
+
+  // Box-shadow animado funciona só na web; nativo usa shadow* fixos.
+  const AnimatedView = Animated.createAnimatedComponent(View);
+
+  const onPressIn = () =>
+    Animated.spring(press, {
+      toValue: 0.94,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 8,
+    }).start();
+  const onPressOut = () =>
+    Animated.spring(press, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 10,
+    }).start();
+  const onPress = () =>
+    Linking.openURL(
+      `https://wa.me/${BRAND.phoneDigits}?text=${encodeURIComponent(
+        "🚨 EMERGÊNCIA — preciso de chaveiro 24h agora!"
+      )}`
+    );
+
+  // Glow via shadow (mobile) ou boxShadow string (web)
+  const glowStyleAnimated = Platform.select<object>({
+    web: {
+      // boxShadow não anima nativamente em RNW; usamos shadow estático + opacity wrapper
+    },
+    default: {},
+  });
 
   return (
     <View
       pointerEvents="box-none"
-      accessible={false}
       style={{
         position: "absolute",
-        right: 18,
+        right: 16,
         bottom,
         zIndex: 50,
-        alignItems: "center",
-        justifyContent: "center",
       }}
     >
-      {/* Rings (não afetam layout) */}
-      <View
+      {/* Glow externo — view absoluta atrás do botão, opacidade pulsa */}
+      <AnimatedView
         pointerEvents="none"
         style={{
           position: "absolute",
-          width: BUTTON_SIZE,
-          height: BUTTON_SIZE,
-          alignItems: "center",
-          justifyContent: "center",
+          inset: 0,
+          opacity: glowOpacity,
+          ...(Platform.OS === "web"
+            ? ({
+                boxShadow: `0 0 32px 8px ${RED_LIGHT}`,
+              } as object)
+            : {
+                shadowColor: RED_LIGHT,
+                shadowOpacity: 1,
+                shadowRadius: 22,
+                shadowOffset: { width: 0, height: 0 },
+              }),
         }}
-      >
-        {renderRing(ring1)}
-        {renderRing(ring2)}
-      </View>
+      />
 
-      <Animated.View style={[{ transform: [{ scale: pressScale }] }, shadowStyle]}>
+      <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable
-          onPressIn={() => {
-            setPressed(true);
-            Animated.spring(pressScale, {
-              toValue: 0.92,
-              useNativeDriver: true,
-              speed: 40,
-              bounciness: 8,
-            }).start();
-          }}
-          onPressOut={() => {
-            setPressed(false);
-            Animated.spring(pressScale, {
-              toValue: 1,
-              useNativeDriver: true,
-              speed: 30,
-              bounciness: 10,
-            }).start();
-          }}
-          onPress={() =>
-            Linking.openURL(
-              `https://wa.me/${BRAND.phoneDigits}?text=${encodeURIComponent(
-                "Preciso de atendimento urgente 24h"
-              )}`
-            )
-          }
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onPress={onPress}
           accessibilityRole="button"
           accessibilityLabel="Emergência 24h via WhatsApp"
           style={{
-            width: extended ? undefined : BUTTON_SIZE,
-            height: BUTTON_SIZE,
-            paddingHorizontal: extended ? 20 : 0,
-            borderRadius: BUTTON_SIZE / 2,
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
-            gap: extended ? 8 : 0,
-            backgroundColor: pressed ? WHATSAPP_GREEN_DARK : WHATSAPP_GREEN,
-            borderWidth: 1.5,
-            borderColor: "rgba(255,255,255,0.25)",
-            overflow: "hidden",
+            gap: variant === "extended" ? 10 : 0,
+            paddingHorizontal: variant === "extended" ? 18 : 0,
+            paddingVertical: 0,
+            height: 56,
+            width: variant === "extended" ? undefined : 56,
+            borderRadius: 28,
+            backgroundColor: RED,
+            // Sombra direcional + glow vermelho
+            ...(Platform.OS === "web"
+              ? ({
+                  boxShadow:
+                    "0 8px 24px rgba(220,38,38,0.45), 0 4px 8px rgba(0,0,0,0.25)",
+                } as object)
+              : {
+                  shadowColor: RED,
+                  shadowOpacity: 0.5,
+                  shadowRadius: 14,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 10,
+                }),
           }}
         >
-          {/* Highlight interno (topo mais claro) */}
+          {/* Highlight superior — "vidro" sutil */}
           <View
             pointerEvents="none"
             style={{
@@ -184,24 +191,64 @@ export function EmergencyFAB({
               top: 0,
               left: 0,
               right: 0,
-              height: BUTTON_SIZE / 2,
-              borderTopLeftRadius: BUTTON_SIZE / 2,
-              borderTopRightRadius: BUTTON_SIZE / 2,
-              backgroundColor: "rgba(255,255,255,0.18)",
+              height: 28,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              backgroundColor: "rgba(255,255,255,0.16)",
             }}
           />
-          <Ionicons name="logo-whatsapp" size={28} color="#FFFFFF" />
-          {extended ? (
-            <Text
+
+          {/* Ícone com bolinha pulsante de status */}
+          <View
+            style={{
+              width: 28,
+              height: 28,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="logo-whatsapp" size={26} color="#FFFFFF" />
+            <Animated.View
               style={{
-                color: "#FFFFFF",
-                fontWeight: "800",
-                fontSize: 14,
-                letterSpacing: 0.3,
+                position: "absolute",
+                top: -2,
+                right: -2,
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: "#FFFFFF",
+                opacity: dotOpacity,
+                borderWidth: 1.5,
+                borderColor: RED_DARK,
               }}
-            >
-              Emergência 24h
-            </Text>
+            />
+          </View>
+
+          {variant === "extended" ? (
+            <View>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontWeight: "900",
+                  fontSize: 13,
+                  letterSpacing: 0.6,
+                  lineHeight: 14,
+                }}
+              >
+                EMERGÊNCIA
+              </Text>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.85)",
+                  fontWeight: "700",
+                  fontSize: 10,
+                  letterSpacing: 0.4,
+                  marginTop: 1,
+                }}
+              >
+                24h • WhatsApp
+              </Text>
+            </View>
           ) : null}
         </Pressable>
       </Animated.View>

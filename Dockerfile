@@ -5,8 +5,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+COPY package.json package-lock.json* ./
+# `npm install` em vez de `npm ci` por uma razão pontual: o lockfile foi
+# gerado em Windows+OneDrive, que corrompe a árvore transitiva (faltam
+# subdeps de @babel/preset-env). `install` recomputa e segue.
+# Quando o lockfile for regenerado fora do OneDrive, voltar para `npm ci`.
+RUN npm install --no-audit --no-fund --loglevel=error
 
 COPY . .
 

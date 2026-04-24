@@ -1,28 +1,27 @@
 server {
-  listen 80;
+  listen ${PORT};
   server_name _;
 
   root /usr/share/nginx/html;
   index index.html;
 
-  # Gzip básico
   gzip on;
   gzip_types text/plain text/css application/json application/javascript application/wasm image/svg+xml;
   gzip_min_length 1024;
 
-  # Assets com hash: cache longo
+  # Assets com hash → cache longo
   location ~* \.(?:js|css|woff2?|ttf|eot|otf|svg|png|jpg|jpeg|gif|ico|webp|wasm)$ {
     expires 1y;
     add_header Cache-Control "public, immutable";
     try_files $uri =404;
   }
 
-  # Expo Router usa rotas client-side: fallback para index.html
+  # Expo Router (SPA): fallback pra index.html
   location / {
     try_files $uri $uri/ /index.html;
   }
 
-  # Desabilita cache do HTML para garantir atualização do bundle
+  # HTML sempre fresco
   location = /index.html {
     add_header Cache-Control "no-store, no-cache, must-revalidate";
   }

@@ -5,14 +5,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Instala deps a partir do lockfile primeiro (cache eficiente)
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copia o restante do projeto e gera o build estático em /app/dist
 COPY . .
 
-# Variáveis do Supabase devem ser passadas em build time para o Metro embutir
+# Variáveis EXPO_PUBLIC_* são embutidas em build time pelo Metro.
+# No Render, basta cadastrar no Environment — ele as repassa como build args.
 ARG EXPO_PUBLIC_SUPABASE_URL
 ARG EXPO_PUBLIC_SUPABASE_ANON_KEY
 ENV EXPO_PUBLIC_SUPABASE_URL=$EXPO_PUBLIC_SUPABASE_URL
@@ -23,9 +22,15 @@ RUN npx expo export --platform web --output-dir dist
 # ─── Stage 2: nginx servindo o bundle estático ───────────────────────────────
 FROM nginx:1.27-alpine AS runner
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# A imagem oficial do nginx faz envsubst em /etc/nginx/templates/*.template
+# antes de iniciar. Limitamos a substituição apenas a $PORT pra não quebrar
+# diretivas do nginx (que usam $uri, $http_*, etc).
+ENV NGINX_ENVSUBST_FILTER=PORT
+ENV PORT=8080
+
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

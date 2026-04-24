@@ -10,7 +10,9 @@ services:
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
     image: chaveiro-concordia-web:latest
     ports:
-      - "8080:80"
+      - "8080:8080"
+    environment:
+      PORT: 8080
     restart: unless-stopped
     profiles: ["prod"]
 

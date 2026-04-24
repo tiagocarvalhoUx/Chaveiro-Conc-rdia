@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chaveiro Concórdia</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0e0e0e; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+
+    ::-webkit-scrollbar { width: 0; height: 0; }
+
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(0.9); } }
+    @keyframes spin   { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
+    input, textarea { caret-color: #FFD700; }
+    button { font-family: inherit; }
+    a { color: inherit; }
+
+    .screen-enter {
+      animation: fadeIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    /* Desktop: scale the phone frame */
+    @media (min-width: 500px) {
+      #root { transform-origin: center center; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Data first -->
+  <script type="text/babel" src="chaveiro-data.jsx"></script>
+  <!-- Screen files -->
+  <script type="text/babel" src="chaveiro-screens-a.jsx"></script>
+  <script type="text/babel" src="chaveiro-screens-b.jsx"></script>
+  <script type="text/babel" src="chaveiro-screens-c.jsx"></script>
+  <!-- iOS frame -->
+  <script type="text/babel" src="ios-frame.jsx"></script>
+
+  <script type="text/babel">
+    // ─── Main App ─────────────────────────────────────────────────────────────
+    function App() {
+      const [screen, setScreen] = React.useState('splash');
+      const [prev, setPrev] = React.useState(null);
+      const [user, setUser] = React.useState(null);
+      const [activeTab, setActiveTab] = React.useState('home');
+      const [bookService, setBookService] = React.useState(null);
+      const [rateOrder, setRateOrder] = React.useState(null);
+      const [screenKey, setScreenKey] = React.useState(0);
+
+      const goTo = React.useCallback((s, opts = {}) => {
+        setPrev(screen);
+        setScreen(s);
+        setScreenKey(k => k + 1);
+        if (opts.service) setBookService(opts.service);
+        if (opts.order) setRateOrder(opts.order);
+      }, [screen]);
+
+      const handleNav = (tab) => {
+        setActiveTab(tab);
+        goTo(tab);
+      };
+
+      const handleLogin = (u) => {
+        setUser(u);
+        setActiveTab('home');
+        goTo('home');
+      };
+
+      const handleEmergency = () => {
+        window.open(`https://wa.me/5518991020078?text=Preciso%20de%20atendimento%20urgente%2024h`, '_blank');
+      };
+
+      const handleBack = () => {
+        const isTab = ['home','catalog','schedule','profile'].includes(prev);
+        if (isTab) {
+          setActiveTab(prev || 'home');
+          goTo(prev || 'home');
+        } else {
+          goTo('home');
+          setActiveTab('home');
+        }
+      };
+
+      const isLoggedIn = !!user;
+      const showBottomNav = isLoggedIn && ['home','catalog','schedule','profile'].includes(screen);
+
+      const renderScreen = () => {
+        switch (screen) {
+          case 'splash':   return <SplashScreen onDone={() => goTo('intro')}/>;
+          case 'intro':    return <IntroScreen  onDone={() => goTo('auth')}/>;
+          case 'auth':     return <AuthScreen   onLogin={handleLogin}/>;
+
+          case 'home':     return <HomeScreen   user={user} onNav={(s) => { if(['catalog','schedule','profile'].includes(s)) setActiveTab(s); goTo(s); }} onEmergency={handleEmergency}/>;
+          case 'catalog':  return <CatalogScreen onBack={handleBack} onBook={svc => goTo('schedule', { service: svc })} onEmergency={handleEmergency}/>;
+          case 'schedule': return <ScheduleScreen onBack={handleBack} onEmergency={handleEmergency} preService={bookService}/>;
+          case 'budget':   return <BudgetScreen  onBack={handleBack} onEmergency={handleEmergency}/>;
+          case 'status':   return <StatusScreen  onBack={handleBack} onRate={o => goTo('reviews', { order: o })} onEmergency={handleEmergency}/>;
+          case 'contact':  return <ContactScreen onBack={handleBack} onEmergency={handleEmergency}/>;
+          case 'profile':  return <ProfileScreen user={user} onBack={handleBack} onLogout={() => { setUser(null); goTo('auth'); }} onEmergency={handleEmergency}/>;
+          case 'reviews':  return <ReviewsScreen onBack={handleBack} preOrder={rateOrder} onEmergency={handleEmergency}/>;
+          default:         return <HomeScreen user={user} onNav={handleNav} onEmergency={handleEmergency}/>;
+        }
+      };
+
+      const isDark = ['splash','intro'].includes(screen);
+      return (
+        <IOSDevice dark={isDark}>
+          {/* Single child — explicit height so absolute children resolve correctly */}
+          <div style={{ position: 'relative', width: '100%', height: 874, background: BRAND.dark }}>
+            {/* Content area: below status bar (62px), above home indicator (34px) */}
+            <div key={screenKey} className="screen-enter" style={{
+              position: 'absolute', top: 62, left: 0, right: 0, bottom: 34, overflow: 'hidden',
+            }}>
+              {renderScreen()}
+              {showBottomNav && <BottomNav active={activeTab} onNav={handleNav}/>}
+            </div>
+          </div>
+        </IOSDevice>
+      );
+    }
+
+    // Scale to fit viewport
+    function ScaledApp() {
+      const [scale, setScale] = React.useState(1);
+      React.useEffect(() => {
+        const calc = () => {
+          const vw = window.innerWidth, vh = window.innerHeight;
+          const frameW = 393, frameH = 852;
+          const padding = 32;
+          const s = Math.min((vw - padding) / frameW, (vh - padding) / frameH, 1.1);
+          setScale(s);
+        };
+        calc();
+        window.addEventListener('resize', calc);
+        return () => window.removeEventListener('resize', calc);
+      }, []);
+      return (
+        <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+          <App/>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<ScaledApp/>);
+  </script>
+</body>
+</html>

@@ -6,8 +6,8 @@ WORKDIR /app
 # Expo precisa de watchman/git para alguns cenários; instalamos o necessário.
 RUN apk add --no-cache git bash
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json package-lock.json* ./
+RUN npm install --no-audit --no-fund
 
 COPY . .
 

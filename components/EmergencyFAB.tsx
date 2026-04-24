@@ -137,10 +137,11 @@ export function EmergencyFAB({
         style={{
           position: "absolute",
           inset: 0,
+          borderRadius: 28,
           opacity: glowOpacity,
           ...(Platform.OS === "web"
             ? ({
-                boxShadow: `0 0 32px 8px ${RED_LIGHT}`,
+                boxShadow: `0 0 24px 0 ${RED_LIGHT}`,
               } as object)
             : {
                 shadowColor: RED_LIGHT,
@@ -171,8 +172,7 @@ export function EmergencyFAB({
             // Sombra direcional + glow vermelho
             ...(Platform.OS === "web"
               ? ({
-                  boxShadow:
-                    "0 8px 24px rgba(220,38,38,0.45), 0 4px 8px )",
+                  boxShadow: "0 6px 20px rgba(220,38,38,0.45)",
                 } as object)
               : {
                   shadowColor: RED,

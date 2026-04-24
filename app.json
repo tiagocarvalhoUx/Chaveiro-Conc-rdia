@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Chaveiro Concórdia",
+    "slug": "chaveiro-concordia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo-chaveiro.png",
+    "scheme": "chaveiroconcordia",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/logo-chaveiro.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFD700"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.com.chaveiroconcordia.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo-chaveiro.png",
+        "backgroundColor": "#FFD700"
+      },
+      "package": "br.com.chaveiroconcordia.app",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+    },
+    "web": {
+      "favicon": "./assets/logo-chaveiro.png",
+      "bundler": "metro",
+      "output": "static",
+      "themeColor": "#FFD700",
+      "backgroundColor": "#1A1A1A",
+      "display": "standalone",
+      "shortName": "Chaveiro",
+      "name": "Chaveiro Concórdia",
+      "description": "Chaveiro 24h em Araçatuba/SP — Automóveis, Empresa e Residência",
+      "lang": "pt-BR",
+      "startUrl": "/",
+      "orientation": "portrait"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFD700",
+          "image": "./assets/logo-chaveiro.png",
+          "imageWidth": 220
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O app precisa acessar suas fotos para enviar imagens do orçamento.",
+          "cameraPermission": "O app precisa acessar a câmera para fotografar o serviço."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "supabaseUrl": "https://YOUR_PROJECT.supabase.co",
+      "supabaseAnonKey": "YOUR_SUPABASE_ANON_KEY"
+    }
+  }
+}

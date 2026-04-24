@@ -43,6 +43,45 @@ npx eas build --platform android
 npx eas build --platform ios
 ```
 
+### 6) Docker (PWA)
+
+Há dois targets no [`docker-compose.yml`](docker-compose.yml):
+
+**Produção — nginx servindo o bundle estático em http://localhost:8080**
+```bash
+# garanta as variáveis em .env (EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY)
+docker compose --profile prod up web --build
+```
+
+**Desenvolvimento — Expo Web com hot reload em http://localhost:8081**
+```bash
+docker compose --profile dev up dev
+```
+
+Arquivos relevantes: [`Dockerfile`](Dockerfile) (multi-stage: build + nginx), [`Dockerfile.dev`](Dockerfile.dev), [`nginx.conf`](nginx.conf), [`.dockerignore`](.dockerignore).
+
+### 7) Deploy na Vercel
+
+1. Crie o projeto na Vercel e conecte o repositório Git (ou faça push e importe).
+2. Em **Project Settings → Environment Variables**, cadastre nos escopos `Production`, `Preview` e `Development`:
+   - `EXPO_PUBLIC_SUPABASE_URL`
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+3. O [`vercel.json`](vercel.json) já define:
+   - `buildCommand`: `npx expo export --platform web --output-dir dist`
+   - `outputDirectory`: `dist`
+   - rewrite de todas as rotas para `/index.html` (Expo Router é SPA)
+   - cache agressivo em `/_expo/static` e `/assets` (arquivos com hash)
+
+Deploy via CLI local:
+```bash
+npm i -g vercel
+vercel link        # primeira vez
+vercel             # preview
+vercel --prod      # produção
+```
+
+⚠️ Variáveis `EXPO_PUBLIC_*` são embutidas em **build time**, não runtime. Alterou credenciais? → novo deploy.
+
 ---
 
 ## 📁 Estrutura

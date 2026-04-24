@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Text, View } from "react-native";
+import { Animated, Easing, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
 import { KeyMascot } from "@/components/KeyMascot";
@@ -7,111 +7,139 @@ import { BRAND } from "@/lib/constants";
 
 /**
  * Tela 0 — Splash + Intro animada.
- *  • 1s: Splash (fundo amarelo + logo)
- *  • 2-3s: Mascote desliza, tagline aparece em fade, número 24h pulsa
- *  • Transição suave para /intro (que decide onde mandar o usuário)
+ *  • Splash amarelo com logo e nome da marca.
+ *  • Após 1.6s, faz fade-out e vai para /intro (decide login ou home).
  */
 export default function SplashIntro() {
   const router = useRouter();
 
-  const fadeBg = useRef(new Animated.Value(1)).current;
-  const mascotTranslate = useRef(new Animated.Value(120)).current;
-  const mascotOpacity = useRef(new Animated.Value(0)).current;
+  const bgOpacity = useRef(new Animated.Value(0)).current;
+  const sparkRotate = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const phonePulse = useRef(new Animated.Value(1)).current;
+  const phoneScale = useRef(new Animated.Value(1)).current;
+  const contentOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // 1) Splash → revela mascote
-    Animated.sequence([
-      Animated.delay(900),
-      Animated.parallel([
-        Animated.timing(mascotOpacity, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.spring(mascotTranslate, {
-          toValue: 0,
-          friction: 6,
-          tension: 60,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.timing(taglineOpacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(bgOpacity, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
 
-    // Pulso do telefone 24h
-    const loop = Animated.loop(
+    Animated.timing(taglineOpacity, {
+      toValue: 1,
+      duration: 700,
+      delay: 300,
+      useNativeDriver: true,
+    }).start();
+
+    const spin = Animated.loop(
+      Animated.timing(sparkRotate, {
+        toValue: 1,
+        duration: 3000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spin.start();
+
+    const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(phonePulse, {
-          toValue: 1.1,
+        Animated.timing(phoneScale, {
+          toValue: 1.08,
           duration: 700,
           useNativeDriver: true,
         }),
-        Animated.timing(phonePulse, {
+        Animated.timing(phoneScale, {
           toValue: 1,
           duration: 700,
           useNativeDriver: true,
         }),
       ])
     );
-    loop.start();
+    pulse.start();
 
-    // Transição final
     const timeout = setTimeout(() => {
-      Animated.timing(fadeBg, {
+      Animated.timing(contentOpacity, {
         toValue: 0,
-        duration: 500,
+        duration: 450,
         useNativeDriver: true,
       }).start(() => {
         router.replace("/intro");
       });
-    }, 3400);
+    }, 2400);
 
     return () => {
       clearTimeout(timeout);
-      loop.stop();
+      spin.stop();
+      pulse.stop();
     };
-  }, [fadeBg, mascotOpacity, mascotTranslate, taglineOpacity, phonePulse, router]);
+  }, [bgOpacity, contentOpacity, phoneScale, router, sparkRotate, taglineOpacity]);
+
+  const spin = sparkRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
 
   return (
-    <Animated.View
-      style={{ flex: 1, backgroundColor: "#FFD700", opacity: fadeBg }}
-      className="items-center justify-center"
-    >
+    <View className="flex-1 items-center justify-center" style={{ backgroundColor: "#FFD700" }}>
       <Animated.View
-        style={{
-          opacity: mascotOpacity,
-          transform: [{ translateY: mascotTranslate }],
-        }}
+        style={{ opacity: contentOpacity, alignItems: "center", gap: 20, paddingHorizontal: 32 }}
       >
-        <KeyMascot size={200} />
-      </Animated.View>
+        <View style={{ position: "relative" }}>
+          <KeyMascot size={140} />
+          <Animated.Text
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -8,
+              fontSize: 26,
+              transform: [{ rotate: spin }],
+            }}
+          >
+            ✨
+          </Animated.Text>
+        </View>
 
-      <View className="mt-6 items-center">
-        <Text className="text-3xl font-extrabold text-dark">
-          {BRAND.name}
-        </Text>
-        <Animated.Text
-          style={{ opacity: taglineOpacity }}
-          className="mt-2 text-sm font-semibold uppercase tracking-widest text-dark"
+        <View className="items-center">
+          <Text className="text-center text-3xl font-black text-dark" style={{ letterSpacing: -0.5 }}>
+            Chaveiro
+          </Text>
+          <Text className="text-center text-3xl font-black text-dark" style={{ letterSpacing: -0.5 }}>
+            Concórdia
+          </Text>
+          <Animated.Text
+            style={{
+              opacity: taglineOpacity,
+              marginTop: 6,
+              letterSpacing: 2,
+              fontSize: 12,
+              fontWeight: "700",
+              color: "rgba(26,26,26,0.7)",
+            }}
+          >
+            {BRAND.tagline}
+          </Animated.Text>
+        </View>
+
+        <Animated.View
+          style={{
+            transform: [{ scale: phoneScale }],
+            backgroundColor: "#1A1A1A",
+            borderRadius: 24,
+            paddingHorizontal: 22,
+            paddingVertical: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
         >
-          {BRAND.tagline}
-        </Animated.Text>
-      </View>
-
-      <Animated.View
-        style={{ transform: [{ scale: phonePulse }] }}
-        className="mt-10 rounded-full bg-dark px-6 py-3"
-      >
-        <Text className="text-base font-extrabold text-primary">
-          24h • {BRAND.phone}
-        </Text>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#CC0000" }} />
+          <Text className="text-base font-extrabold text-white">
+            24h — {BRAND.phone}
+          </Text>
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </View>
   );
 }

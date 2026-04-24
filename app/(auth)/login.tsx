@@ -1,13 +1,14 @@
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 
 import { KeyMascot } from "@/components/KeyMascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -17,6 +18,7 @@ import { BRAND } from "@/lib/constants";
 
 export default function Login() {
   const { signIn } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,6 +33,7 @@ export default function Login() {
     setLoading(true);
     try {
       await signIn(email, senha);
+      router.replace("/(app)/home");
     } catch (e) {
       setErro(
         e instanceof Error
@@ -45,65 +48,107 @@ export default function Login() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-dark"
+      className="flex-1"
+      style={{ backgroundColor: "#111111" }}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: "center" }}
+        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="items-center">
-          <KeyMascot size={120} />
-          <Text className="mt-4 text-3xl font-extrabold text-primary">
-            {BRAND.name}
-          </Text>
-          <Text className="mt-1 text-xs uppercase tracking-widest text-muted">
-            {BRAND.tagline}
-          </Text>
+        {/* Header amarelo */}
+        <View
+          style={{
+            backgroundColor: "#FFD700",
+            paddingTop: 48,
+            paddingHorizontal: 28,
+            paddingBottom: 48,
+          }}
+        >
+          <View className="flex-row items-center gap-3">
+            <KeyMascot size={46} />
+            <View>
+              <Text className="text-lg font-black text-dark">{BRAND.name}</Text>
+              <Text
+                className="text-[11px] font-bold text-dark/70"
+                style={{ letterSpacing: 1 }}
+              >
+                {BRAND.tagline}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <View className="mt-10 gap-4">
-          <TextField
-            label="E-mail"
-            icon="mail"
-            placeholder="voce@exemplo.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextField
-            label="Senha"
-            icon="lock-closed"
-            placeholder="••••••••"
-            password
-            value={senha}
-            onChangeText={setSenha}
-          />
+        {/* Form */}
+        <View className="flex-1 px-6 pb-10 pt-6">
+          <Text className="text-2xl font-extrabold text-white">
+            Entrar na conta
+          </Text>
+          <Text className="mt-1 text-sm text-white/50">
+            Bem-vindo de volta! Acesse seus pedidos.
+          </Text>
 
-          {erro ? (
-            <Text className="text-center text-sm text-danger">{erro}</Text>
-          ) : null}
+          <View className="mt-6 gap-4">
+            <TextField
+              label="E-mail"
+              icon="mail"
+              placeholder="voce@exemplo.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextField
+              label="Senha"
+              icon="lock-closed"
+              placeholder="••••••••"
+              password
+              value={senha}
+              onChangeText={setSenha}
+            />
 
-          <PrimaryButton
-            label="Entrar"
-            loading={loading}
-            onPress={handleSubmit}
-          />
+            {erro ? (
+              <View
+                className="rounded-xl border px-4 py-3"
+                style={{
+                  backgroundColor: "rgba(204,0,0,0.15)",
+                  borderColor: "rgba(204,0,0,0.3)",
+                }}
+              >
+                <Text className="text-sm font-semibold text-danger">
+                  {erro}
+                </Text>
+              </View>
+            ) : null}
 
-          <Link href="/(auth)/cadastro" asChild>
-            <Pressable className="mt-2 items-center py-2">
-              <Text className="text-sm text-muted">
-                Ainda não tem conta?{" "}
-                <Text className="font-bold text-primary">Cadastre-se</Text>
+            <PrimaryButton
+              label={loading ? "Aguarde..." : "Entrar"}
+              loading={loading}
+              onPress={handleSubmit}
+            />
+          </View>
+
+          <View className="mt-6 items-center">
+            <Text className="text-sm text-white/50">
+              Não tem conta?{" "}
+              <Link href="/(auth)/cadastro" asChild>
+                <Text className="font-extrabold text-primary">Cadastre-se</Text>
+              </Link>
+            </Text>
+          </View>
+
+          <View className="mt-8 items-center border-t border-white/10 pt-5">
+            <Text className="text-xs text-white/40">Emergência 24h</Text>
+            <Pressable
+              onPress={() => Linking.openURL(`tel:${BRAND.phoneDigits}`)}
+              className="mt-1"
+            >
+              <Text className="text-base font-extrabold text-danger">
+                📞 {BRAND.phone}
               </Text>
             </Pressable>
-          </Link>
+          </View>
         </View>
-
-        <Text className="mt-10 text-center text-xs text-muted">
-          24h • {BRAND.phone} • {BRAND.city}
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

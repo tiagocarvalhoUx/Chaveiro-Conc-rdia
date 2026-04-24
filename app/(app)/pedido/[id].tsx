@@ -10,10 +10,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-import { BrandHeader } from "@/components/BrandHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { StarRating } from "@/components/StarRating";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TextField } from "@/components/TextField";
@@ -24,25 +24,22 @@ import {
   categoriaLabel,
   formatBRL,
   formatDateTimeBR,
-  statusLabel,
+  statusColor,
+  statusStep,
 } from "@/lib/format";
-import {
-  buscarAvaliacaoDoPedido,
-  criarAvaliacao,
-} from "@/services/avaliacoes";
+import { buscarAvaliacaoDoPedido, criarAvaliacao } from "@/services/avaliacoes";
 import type { Avaliacao, StatusPedido } from "@/types/database";
 
-const TIMELINE: { status: StatusPedido; label: string; icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap }[] = [
-  { status: "pendente", label: "Pedido recebido", icon: "document-text" },
-  { status: "confirmado", label: "Confirmado pela equipe", icon: "checkmark-done" },
-  { status: "em_atendimento", label: "Em atendimento", icon: "construct" },
-  { status: "concluido", label: "Concluído", icon: "trophy" },
+const TIMELINE: {
+  status: StatusPedido;
+  label: string;
+  emoji: string;
+}[] = [
+  { status: "pendente", label: "Pedido recebido", emoji: "📅" },
+  { status: "confirmado", label: "Confirmado", emoji: "✅" },
+  { status: "em_atendimento", label: "Em andamento", emoji: "🔧" },
+  { status: "concluido", label: "Concluído", emoji: "🎉" },
 ];
-
-function indiceStatus(status: StatusPedido): number {
-  if (status === "cancelado") return -1;
-  return TIMELINE.findIndex((t) => t.status === status);
-}
 
 export default function StatusPedidoScreen() {
   const router = useRouter();
@@ -56,7 +53,6 @@ export default function StatusPedidoScreen() {
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erroAvaliacao, setErroAvaliacao] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState(false);
 
   useEffect(() => {
     if (!pedido?.id || pedido.status !== "concluido") return;
@@ -83,11 +79,10 @@ export default function StatusPedidoScreen() {
         comentario: comentario.trim() || undefined,
       });
       setAvaliacao(a);
-      setSucesso(true);
     } catch (e) {
       setErroAvaliacao(
         e instanceof Error
-          ? "Não foi possível enviar a avaliação. Tente novamente."
+          ? "Não foi possível enviar a avaliação."
           : "Falha desconhecida."
       );
     } finally {
@@ -106,7 +101,7 @@ export default function StatusPedidoScreen() {
   if (error || !pedido) {
     return (
       <View className="flex-1 bg-dark">
-        <BrandHeader subtitle="Pedido" onBack={() => router.back()} />
+        <ScreenHeader title="Pedido" onBack={() => router.back()} />
         <View className="flex-1 items-center justify-center gap-3 px-6">
           <Text className="text-center text-sm text-danger">
             {error ?? "Pedido não encontrado."}
@@ -122,18 +117,22 @@ export default function StatusPedidoScreen() {
     );
   }
 
-  const idxAtual = indiceStatus(pedido.status);
+  const currentStep = statusStep(pedido.status);
   const cancelado = pedido.status === "cancelado";
   const concluido = pedido.status === "concluido";
+  const color = statusColor(pedido.status);
 
   return (
     <View className="flex-1 bg-dark">
-      <BrandHeader subtitle="Status do pedido" onBack={() => router.back()} />
+      <ScreenHeader title="Status do pedido" onBack={() => router.back()} />
       <ScreenContainer>
         <GlassCard accent={cancelado ? "danger" : "primary"}>
           <View className="flex-row items-start justify-between gap-3">
             <View className="flex-1">
-              <Text className="text-xs uppercase tracking-widest text-primary">
+              <Text
+                className="text-[11px] font-bold uppercase text-primary"
+                style={{ letterSpacing: 0.5 }}
+              >
                 {pedido.tipo === "orcamento"
                   ? "Orçamento"
                   : pedido.tipo === "agendamento"
@@ -144,7 +143,7 @@ export default function StatusPedidoScreen() {
                 {pedido.servico?.titulo ?? "Atendimento personalizado"}
               </Text>
               {pedido.servico ? (
-                <Text className="text-xs text-muted">
+                <Text className="text-xs text-white/45">
                   {categoriaLabel(pedido.servico.categoria)} •{" "}
                   {formatBRL(pedido.servico.preco_minimo)}
                 </Text>
@@ -153,17 +152,17 @@ export default function StatusPedidoScreen() {
             <StatusBadge status={pedido.status} />
           </View>
 
-          <View className="mt-3 gap-1">
-            <Text className="text-xs text-muted">
+          <View className="mt-3 gap-0.5">
+            <Text className="text-xs text-white/45">
               Criado em {formatDateTimeBR(pedido.created_at)}
             </Text>
             {pedido.data_agendada ? (
-              <Text className="text-xs text-muted">
+              <Text className="text-xs text-white/45">
                 Agendado: {pedido.data_agendada} {pedido.horario_agendado ?? ""}
               </Text>
             ) : null}
             {pedido.endereco ? (
-              <Text className="text-xs text-muted">
+              <Text className="text-xs text-white/45">
                 Endereço: {pedido.endereco}
               </Text>
             ) : null}
@@ -172,7 +171,10 @@ export default function StatusPedidoScreen() {
 
         {pedido.foto_url ? (
           <GlassCard className="mt-4">
-            <Text className="mb-2 text-xs uppercase tracking-widest text-primary">
+            <Text
+              className="mb-2 text-[11px] font-bold uppercase text-primary"
+              style={{ letterSpacing: 0.5 }}
+            >
               Foto enviada
             </Text>
             <Image
@@ -185,105 +187,135 @@ export default function StatusPedidoScreen() {
 
         {pedido.observacoes ? (
           <GlassCard className="mt-4">
-            <Text className="text-xs uppercase tracking-widest text-primary">
+            <Text
+              className="text-[11px] font-bold uppercase text-primary"
+              style={{ letterSpacing: 0.5 }}
+            >
               Observações
             </Text>
             <Text className="mt-1 text-sm text-white">{pedido.observacoes}</Text>
           </GlassCard>
         ) : null}
 
-        <Text className="mt-6 text-xs uppercase tracking-widest text-primary">
-          Acompanhamento em tempo real
-        </Text>
-
-        <View className="mt-3 gap-3">
-          {TIMELINE.map((step, i) => {
-            const ativo = !cancelado && i <= idxAtual;
-            const atual = !cancelado && i === idxAtual;
-            return (
-              <View key={step.status} className="flex-row items-center gap-3">
+        <GlassCard className="mt-4">
+          <Text
+            className="text-[11px] font-bold uppercase text-primary"
+            style={{ letterSpacing: 0.5 }}
+          >
+            Acompanhamento em tempo real
+          </Text>
+          <View className="mt-3 pl-7">
+            {TIMELINE.map((step, i) => {
+              const done = i < currentStep;
+              const active = i === currentStep - 1;
+              const dot = done || active ? color : "rgba(255,255,255,0.15)";
+              return (
                 <View
-                  className={`h-10 w-10 items-center justify-center rounded-full border ${
-                    ativo
-                      ? "border-primary bg-primary"
-                      : "border-white/20 bg-white/5"
-                  }`}
+                  key={step.status}
+                  style={{
+                    position: "relative",
+                    paddingBottom: i < TIMELINE.length - 1 ? 22 : 0,
+                  }}
                 >
-                  <Ionicons
-                    name={step.icon}
-                    size={18}
-                    color={ativo ? "#1A1A1A" : "#A1A1A1"}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text
-                    className={`text-sm font-bold ${
-                      ativo ? "text-white" : "text-muted"
-                    }`}
-                  >
-                    {step.label}
-                  </Text>
-                  {atual ? (
-                    <Text className="text-xs text-primary">
-                      {statusLabel(step.status)} agora
-                    </Text>
+                  {i < TIMELINE.length - 1 ? (
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: -22,
+                        top: 18,
+                        width: 2,
+                        height: 22,
+                        backgroundColor: done ? color : "rgba(255,255,255,0.1)",
+                      }}
+                    />
                   ) : null}
+                  <View
+                    style={{
+                      position: "absolute",
+                      left: -29,
+                      top: 2,
+                      width: 14,
+                      height: 14,
+                      borderRadius: 7,
+                      backgroundColor: dot,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {done ? (
+                      <Ionicons name="checkmark" size={8} color="#fff" />
+                    ) : null}
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <Text style={{ fontSize: 14 }}>{step.emoji}</Text>
+                    <Text
+                      className="text-sm"
+                      style={{
+                        color: done || active ? "#fff" : "rgba(255,255,255,0.45)",
+                        fontWeight: active ? "700" : "500",
+                      }}
+                    >
+                      {step.label}
+                    </Text>
+                  </View>
                 </View>
+              );
+            })}
+            {cancelado ? (
+              <View
+                className="mt-2 rounded-xl border px-3 py-2"
+                style={{
+                  backgroundColor: "rgba(204,0,0,0.1)",
+                  borderColor: "rgba(204,0,0,0.4)",
+                }}
+              >
+                <Text className="text-sm font-extrabold text-danger">
+                  Este pedido foi cancelado.
+                </Text>
               </View>
-            );
-          })}
-          {cancelado ? (
-            <View className="rounded-xl border border-danger/40 bg-danger/10 p-3">
-              <Text className="text-sm font-bold text-danger">
-                Este pedido foi cancelado.
-              </Text>
-            </View>
-          ) : null}
-        </View>
+            ) : null}
+          </View>
+        </GlassCard>
 
         <Pressable
           onPress={() => Linking.openURL(BRAND.whatsappUrl)}
-          className="mt-6 flex-row items-center justify-center gap-2 rounded-xl border border-primary py-3"
+          className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl border py-3"
+          style={{ borderColor: "#25D366", backgroundColor: "rgba(37,211,102,0.08)" }}
         >
-          <Ionicons name="logo-whatsapp" size={18} color="#FFD700" />
-          <Text className="text-sm font-bold text-primary">
+          <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+          <Text className="text-sm font-extrabold" style={{ color: "#25D366" }}>
             Falar com a equipe
           </Text>
         </Pressable>
 
-        {/* Avaliação — liberada apenas quando concluido */}
         {concluido ? (
           <View className="mt-6">
-            <Text className="text-xs uppercase tracking-widest text-primary">
+            <Text
+              className="text-[11px] font-bold uppercase text-primary"
+              style={{ letterSpacing: 0.5 }}
+            >
               Avaliação
             </Text>
             {carregandoAvaliacao ? (
-              <ActivityIndicator color="#FFD700" style={{ marginTop: 16 }} />
+              <ActivityIndicator color="#FFD700" style={{ marginTop: 14 }} />
             ) : avaliacao ? (
               <GlassCard className="mt-2">
-                <Text className="mb-2 text-sm font-bold text-white">
+                <Text className="mb-2 text-sm font-extrabold text-white">
                   Sua avaliação
                 </Text>
                 <StarRating value={avaliacao.nota} readOnly />
                 {avaliacao.comentario ? (
-                  <Text className="mt-3 text-sm text-muted">
+                  <Text className="mt-3 text-sm text-white/65">
                     “{avaliacao.comentario}”
                   </Text>
                 ) : null}
-                <Text className="mt-3 text-xs text-muted">
+                <Text className="mt-3 text-xs text-white/45">
                   Enviada em {formatDateTimeBR(avaliacao.created_at)}
-                </Text>
-              </GlassCard>
-            ) : sucesso ? (
-              <GlassCard className="mt-2 items-center">
-                <Ionicons name="checkmark-circle" size={32} color="#FFD700" />
-                <Text className="mt-2 text-sm font-bold text-white">
-                  Obrigado pela avaliação!
                 </Text>
               </GlassCard>
             ) : (
               <GlassCard className="mt-2">
-                <Text className="text-sm text-muted">
+                <Text className="text-sm text-white/65">
                   Como foi nosso atendimento?
                 </Text>
                 <View className="mt-3 items-center">
@@ -308,6 +340,7 @@ export default function StatusPedidoScreen() {
                 <PrimaryButton
                   className="mt-4"
                   label="Enviar avaliação"
+                  icon="star"
                   loading={enviando}
                   onPress={enviarAvaliacao}
                 />
@@ -315,7 +348,7 @@ export default function StatusPedidoScreen() {
             )}
           </View>
         ) : (
-          <Text className="mt-6 text-center text-xs text-muted">
+          <Text className="mt-6 text-center text-xs text-white/45">
             A avaliação será liberada quando o pedido for concluído.
           </Text>
         )}

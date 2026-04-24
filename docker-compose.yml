@@ -1,0 +1,36 @@
+services:
+  # Build de produção servido por nginx na porta 8080.
+  # Use: docker compose up web --build
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL}
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+    image: chaveiro-concordia-web:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    profiles: ["prod"]
+
+  # Desenvolvimento: `expo start --web` com hot reload na porta 8081.
+  # Use: docker compose up dev
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: chaveiro-concordia-dev:latest
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    environment:
+      EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.expo
+    profiles: ["dev"]

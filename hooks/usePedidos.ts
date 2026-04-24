@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
 import {
@@ -21,6 +21,8 @@ export function usePedidos(clienteId: string | undefined) {
     loading: true,
     error: null,
   });
+  // Nome único por instância — evita colisão quando várias telas usam o hook.
+  const hookId = useId();
 
   const reload = useCallback(async () => {
     if (!clienteId) {
@@ -38,15 +40,19 @@ export function usePedidos(clienteId: string | undefined) {
     }
   }, [clienteId]);
 
+  const reloadRef = useRef(reload);
+  useEffect(() => {
+    reloadRef.current = reload;
+  }, [reload]);
+
   useEffect(() => {
     reload();
   }, [reload]);
 
-  // Realtime
   useEffect(() => {
     if (!clienteId) return;
     const channel = supabase
-      .channel(`pedidos:cliente=${clienteId}`)
+      .channel(`pedidos:cliente=${clienteId}:${hookId}`)
       .on(
         "postgres_changes",
         {
@@ -56,7 +62,7 @@ export function usePedidos(clienteId: string | undefined) {
           filter: `cliente_id=eq.${clienteId}`,
         },
         () => {
-          reload();
+          reloadRef.current();
         }
       )
       .subscribe();
@@ -64,7 +70,7 @@ export function usePedidos(clienteId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [clienteId, reload]);
+  }, [clienteId, hookId]);
 
   return { ...state, reload };
 }

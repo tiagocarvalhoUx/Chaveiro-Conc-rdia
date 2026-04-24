@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
 import { buscarPedido, type PedidoComServico } from "@/services/pedidos";
@@ -18,6 +18,7 @@ export function usePedido(pedidoId: string | undefined) {
     loading: true,
     error: null,
   });
+  const hookId = useId();
 
   const reload = useCallback(async () => {
     if (!pedidoId) {
@@ -35,6 +36,11 @@ export function usePedido(pedidoId: string | undefined) {
     }
   }, [pedidoId]);
 
+  const reloadRef = useRef(reload);
+  useEffect(() => {
+    reloadRef.current = reload;
+  }, [reload]);
+
   useEffect(() => {
     reload();
   }, [reload]);
@@ -42,7 +48,7 @@ export function usePedido(pedidoId: string | undefined) {
   useEffect(() => {
     if (!pedidoId) return;
     const channel = supabase
-      .channel(`pedido:${pedidoId}`)
+      .channel(`pedido:${pedidoId}:${hookId}`)
       .on(
         "postgres_changes",
         {
@@ -52,7 +58,7 @@ export function usePedido(pedidoId: string | undefined) {
           filter: `id=eq.${pedidoId}`,
         },
         () => {
-          reload();
+          reloadRef.current();
         }
       )
       .subscribe();
@@ -60,7 +66,7 @@ export function usePedido(pedidoId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [pedidoId, reload]);
+  }, [pedidoId, hookId]);
 
   return { ...state, reload };
 }

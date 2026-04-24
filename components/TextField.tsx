@@ -9,10 +9,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 interface TextFieldProps extends TextInputProps {
-  label: string;
+  label?: string;
   error?: string;
   icon?: keyof typeof Ionicons.glyphMap;
   password?: boolean;
+  hint?: string;
 }
 
 export function TextField({
@@ -20,34 +21,65 @@ export function TextField({
   error,
   icon,
   password = false,
+  hint,
   className = "",
   ...rest
 }: TextFieldProps) {
   const [visible, setVisible] = useState(!password);
+  const [focused, setFocused] = useState(false);
 
   return (
     <View className={`w-full ${className}`}>
-      <Text className="mb-2 text-sm font-semibold text-white">{label}</Text>
+      {label ? (
+        <Text
+          className="mb-1.5 text-xs font-bold uppercase text-white/60"
+          style={{ letterSpacing: 0.5 }}
+        >
+          {label}
+        </Text>
+      ) : null}
       <View
-        className={`flex-row items-center rounded-xl border bg-white/5 px-4 ${
-          error ? "border-danger" : "border-primary/30"
+        className={`flex-row items-center rounded-xl border px-4 ${
+          error
+            ? "border-danger"
+            : focused
+              ? "border-primary"
+              : "border-white/10"
         }`}
+        style={{
+          backgroundColor: focused
+            ? "rgba(255,215,0,0.08)"
+            : "rgba(255,255,255,0.05)",
+        }}
       >
         {icon ? (
-          <Ionicons name={icon} size={20} color="#FFD700" style={{ marginRight: 8 }} />
+          <Ionicons
+            name={icon}
+            size={18}
+            color={focused ? "#FFD700" : "#A1A1A1"}
+            style={{ marginRight: 10 }}
+          />
         ) : null}
         <TextInput
           {...rest}
-          placeholderTextColor="#A1A1A1"
+          placeholderTextColor="rgba(255,255,255,0.3)"
           secureTextEntry={password ? !visible : false}
-          className="flex-1 py-4 text-base text-white"
-          style={{ outlineStyle: "none" } as never}
+          onFocus={(e) => {
+            setFocused(true);
+            rest.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            rest.onBlur?.(e);
+          }}
+          className="flex-1 py-3.5 text-base text-white"
+          style={[{ outlineStyle: "none" } as never, rest.style]}
         />
         {password ? (
           <Pressable onPress={() => setVisible((v) => !v)} hitSlop={10}>
             <Ionicons
               name={visible ? "eye-off" : "eye"}
-              size={20}
+              size={18}
               color="#A1A1A1"
             />
           </Pressable>
@@ -55,6 +87,8 @@ export function TextField({
       </View>
       {error ? (
         <Text className="mt-1 text-xs text-danger">{error}</Text>
+      ) : hint ? (
+        <Text className="mt-1 text-xs text-white/40">{hint}</Text>
       ) : null}
     </View>
   );

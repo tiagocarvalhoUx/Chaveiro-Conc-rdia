@@ -35,6 +35,19 @@ export default function Root({ children }: PropsWithChildren) {
         <ScrollViewStyleReset />
 
         <style dangerouslySetInnerHTML={{ __html: globalStyle }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker
+                    .register('/sw.js')
+                    .catch(function(err) { console.warn('SW registration failed', err); });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

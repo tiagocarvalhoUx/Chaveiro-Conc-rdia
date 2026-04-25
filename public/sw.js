@@ -1,7 +1,7 @@
 // Service Worker — Chaveiro Concórdia PWA
 // Estratégia: network-first para HTML/API; cache-first para assets imutáveis.
 
-const CACHE_VERSION = "chaveiro-v1";
+const CACHE_VERSION = "chaveiro-v2";
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -24,11 +24,34 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Cache.put() rejeita schemes != http(s) (ex.: chrome-extension://)
+function isCacheableRequest(req, url) {
+  return (
+    req.method === "GET" &&
+    (url.protocol === "http:" || url.protocol === "https:")
+  );
+}
+
+function safePut(req, res) {
+  return caches
+    .open(CACHE_VERSION)
+    .then((c) => c.put(req, res))
+    .catch(() => undefined);
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
 
-  const url = new URL(req.url);
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch {
+    return;
+  }
+
+  // Ignora schemes nao-cacheaveis (chrome-extension, etc.)
+  if (!isCacheableRequest(req, url)) return;
 
   // Nunca cacheia chamadas para Supabase (API/realtime/auth)
   if (url.hostname.endsWith(".supabase.co")) return;
@@ -38,8 +61,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
+          if (res.ok) safePut(req, res.clone());
           return res;
         })
         .catch(() => caches.match(req).then((m) => m || caches.match("/")))
@@ -57,8 +79,7 @@ self.addEventListener("fetch", (event) => {
       caches.match(req).then((cached) => {
         if (cached) return cached;
         return fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
+          if (res.ok) safePut(req, res.clone());
           return res;
         });
       })

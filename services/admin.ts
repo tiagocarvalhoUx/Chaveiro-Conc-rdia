@@ -78,12 +78,18 @@ export async function buscarEstatisticas(): Promise<EstatisticasDashboard> {
  * Verifica se o usuário logado é admin consultando o campo is_admin do perfil.
  */
 export async function verificarIsAdmin(userId: string): Promise<boolean> {
+  console.log("[verificarIsAdmin] userId recebido:", userId);
   const { data, error } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", userId)
     .single();
 
+  console.log("[verificarIsAdmin] data:", data, "| error:", error);
+
   if (error) return false;
-  return (data as Profile & { is_admin: boolean })?.is_admin === true;
+  const result =
+    (data as Profile & { is_admin: boolean })?.is_admin === true;
+  console.log("[verificarIsAdmin] resultado final:", result);
+  return result;
 }

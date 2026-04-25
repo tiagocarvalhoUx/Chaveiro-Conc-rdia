@@ -23,8 +23,11 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    console.log("[AdminGuard] session.user.id:", session.user.id);
     verificarIsAdmin(session.user.id).then((result) => {
+      console.log("[AdminGuard] verificarIsAdmin retornou:", result);
       if (!result) {
+        console.log("[AdminGuard] redirecionando para /home");
         // Não é admin: redireciona para o app normal
         router.replace("/(app)/home");
       } else {

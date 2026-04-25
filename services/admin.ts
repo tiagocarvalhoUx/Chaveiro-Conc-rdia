@@ -2,6 +2,14 @@ import { supabase } from "@/lib/supabase";
 import type { Profile, StatusPedido } from "@/types/database";
 import type { PedidoComServico } from "./pedidos";
 
+// ─── Receita mensal ──────────────────────────────────────────────────────────
+
+export interface ReceitaMensal {
+  total: number;
+  quantidade: number;
+  mes: string;
+}
+
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
 export interface PedidoAdminCompleto extends PedidoComServico {
@@ -71,6 +79,33 @@ export async function buscarEstatisticas(): Promise<EstatisticasDashboard> {
     concluidos: pedidos.filter((p) => p.status === "concluido").length,
     cancelados: pedidos.filter((p) => p.status === "cancelado").length,
     hoje: pedidos.filter((p) => p.created_at?.startsWith(today)).length,
+  };
+}
+
+/**
+ * Retorna receita e contagem de pedidos do mês corrente (exclui cancelados).
+ */
+export async function buscarReceitaMensal(): Promise<ReceitaMensal> {
+  const agora = new Date();
+  const inicio = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+  const fim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select("valor_estimado, status")
+    .gte("created_at", inicio)
+    .lte("created_at", fim);
+
+  if (error) throw error;
+
+  const pedidos = (data ?? []).filter((p) => p.status !== "cancelado");
+  const total = pedidos.reduce((acc, p) => acc + (p.valor_estimado ?? 0), 0);
+  const mesLabel = agora.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  return {
+    total,
+    quantidade: pedidos.length,
+    mes: mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1),
   };
 }
 

@@ -1,15 +1,13 @@
 -- ============================================================
--- MIGRAÇÃO: Suporte ao Painel Admin — Chaveiro Concórdia
+-- HOTFIX: Recursao infinita nas policies de RLS (admin)
+-- Sintoma: GET /profiles e /pedidos retornavam 500
+-- Causa: policy de profiles fazia subquery em profiles dentro de si mesma
+-- Solucao: funcao SECURITY DEFINER que bypassa RLS na checagem de is_admin
+-- ============================================================
 -- Execute este script no SQL Editor do Supabase
 -- ============================================================
 
--- 1. Adicionar coluna is_admin na tabela profiles
-ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
-
--- 2. Funcao SECURITY DEFINER para checar admin sem recursao de RLS
---    (subquery direta em profiles dentro de uma policy de profiles dispara
---     "infinite recursion detected" no Postgres -> 500)
+-- 1. Funcao para checar admin sem disparar RLS
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -25,11 +23,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, anon;
 
--- 3. Policies de pedidos com bypass para admin
-
-DROP POLICY IF EXISTS "Clientes veem apenas seus pedidos" ON pedidos;
-DROP POLICY IF EXISTS "Clientes criam seus pedidos" ON pedidos;
-DROP POLICY IF EXISTS "Clientes atualizam seus pedidos" ON pedidos;
+-- 2. Recria policies de pedidos usando a funcao
 DROP POLICY IF EXISTS "Pedidos: leitura por dono ou admin" ON pedidos;
 DROP POLICY IF EXISTS "Pedidos: criação pelo cliente" ON pedidos;
 DROP POLICY IF EXISTS "Pedidos: atualização pelo dono ou admin" ON pedidos;
@@ -47,11 +41,8 @@ CREATE POLICY "Pedidos: atualização pelo dono ou admin" ON pedidos
     auth.uid() = cliente_id OR public.is_admin()
   );
 
--- 4. Policies de profiles com bypass para admin
-
-DROP POLICY IF EXISTS "Perfis: leitura pelo dono" ON profiles;
+-- 3. Recria policies de profiles usando a funcao
 DROP POLICY IF EXISTS "Perfis: leitura pelo dono ou admin" ON profiles;
-DROP POLICY IF EXISTS "Perfis: atualização pelo dono" ON profiles;
 DROP POLICY IF EXISTS "Perfis: atualização pelo dono ou admin" ON profiles;
 
 CREATE POLICY "Perfis: leitura pelo dono ou admin" ON profiles
@@ -63,15 +54,3 @@ CREATE POLICY "Perfis: atualização pelo dono ou admin" ON profiles
   FOR UPDATE USING (
     auth.uid() = id OR public.is_admin()
   );
-
--- ============================================================
--- PASSO FINAL: Definir o admin
--- Substitua 'seu-email@exemplo.com' pelo e-mail do usuário admin
--- e execute o comando abaixo após criar a conta no app:
--- ============================================================
-
--- UPDATE profiles
--- SET is_admin = true
--- WHERE id = (
---   SELECT id FROM auth.users WHERE email = 'seu-email@exemplo.com'
--- );

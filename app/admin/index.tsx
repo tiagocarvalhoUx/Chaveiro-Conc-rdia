@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -15,10 +18,24 @@ import {
   type EstatisticasDashboard,
   type PedidoAdminCompleto,
 } from "@/services/admin";
+import {
+  buscarCustoVendasPorCliente,
+  buscarFaturamentoDashboard,
+  buscarFaturamentoUltimos6Meses,
+  buscarTopClientes,
+  type ClienteFaturamento,
+  type FaturamentoDashboard,
+  type PontoTemporal,
+} from "@/services/faturamento";
+import { exportarPlanilhaAdmin } from "@/lib/exportExcel";
+import { MetricCard } from "@/components/admin/MetricCard";
+import { RevenueChart } from "@/components/admin/RevenueChart";
+import { TopClientes } from "@/components/admin/TopClientes";
 import { BRAND, COLORS, STATUS_INFO } from "@/lib/constants";
-import { formatDateBR as formatarData, formatBRL as formatarValor } from "@/lib/format";
-
-// ─── Tipos ───────────────────────────────────────────────────────────────────
+import {
+  formatBRL as formatarValor,
+  formatDateBR as formatarData,
+} from "@/lib/format";
 
 interface StatCardProps {
   label: string;
@@ -27,8 +44,6 @@ interface StatCardProps {
   color?: string;
   onPress?: () => void;
 }
-
-// ─── Componentes auxiliares ──────────────────────────────────────────────────
 
 function StatCard({ label, value, icon, color, onPress }: StatCardProps) {
   const content = (
@@ -64,11 +79,7 @@ function PedidoRecenteCard({
   };
 
   return (
-    <TouchableOpacity
-      style={styles.recentCard}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
+    <TouchableOpacity style={styles.recentCard} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.recentCardLeft}>
         <Text style={styles.recentCardTipo}>{tipoBadge[pedido.tipo] ?? "📋"}</Text>
         <View style={{ flex: 1 }}>
@@ -78,38 +89,42 @@ function PedidoRecenteCard({
           <Text style={styles.recentCardServico} numberOfLines={1}>
             {pedido.servico?.titulo ?? pedido.observacoes ?? "—"}
           </Text>
-          <Text style={styles.recentCardData}>
-            {formatarData(pedido.created_at)}
-          </Text>
+          <Text style={styles.recentCardData}>{formatarData(pedido.created_at)}</Text>
         </View>
       </View>
       <View style={[styles.statusPill, { backgroundColor: status.color + "25" }]}>
         <View style={[styles.statusDot, { backgroundColor: status.color }]} />
-        <Text style={[styles.statusText, { color: status.color }]}>
-          {status.label}
-        </Text>
+        <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-// ─── Tela principal ──────────────────────────────────────────────────────────
-
 export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<EstatisticasDashboard | null>(null);
   const [recentes, setRecentes] = useState<PedidoAdminCompleto[]>([]);
+  const [faturamento, setFaturamento] = useState<FaturamentoDashboard | null>(null);
+  const [serie6m, setSerie6m] = useState<PontoTemporal[]>([]);
+  const [topClientes, setTopClientes] = useState<ClienteFaturamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   const carregarDados = useCallback(async () => {
     try {
-      const [statsData, pedidosData] = await Promise.all([
+      const [statsData, pedidosData, fatData, serie, top] = await Promise.all([
         buscarEstatisticas(),
         listarTodosPedidos(),
+        buscarFaturamentoDashboard(),
+        buscarFaturamentoUltimos6Meses(),
+        buscarTopClientes(5),
       ]);
       setStats(statsData);
       setRecentes(pedidosData.slice(0, 6));
+      setFaturamento(fatData);
+      setSerie6m(serie);
+      setTopClientes(top);
     } catch (err) {
       console.error("Erro ao carregar dashboard:", err);
     } finally {
@@ -125,6 +140,23 @@ export default function AdminDashboard() {
   const onRefresh = () => {
     setRefreshing(true);
     carregarDados();
+  };
+
+  const handleExportar = async () => {
+    if (Platform.OS !== "web") {
+      Alert.alert("Exportar Excel", "A exportação está disponível apenas na versão web.");
+      return;
+    }
+    try {
+      setExportando(true);
+      const linhas = await buscarCustoVendasPorCliente();
+      await exportarPlanilhaAdmin({ linhas, serieFaturamento: serie6m });
+    } catch (err) {
+      console.error("Erro ao exportar:", err);
+      Alert.alert("Erro", "Não foi possível gerar a planilha.");
+    } finally {
+      setExportando(false);
+    }
   };
 
   const hoje = new Date().toLocaleDateString("pt-BR", {
@@ -146,18 +178,81 @@ export default function AdminDashboard() {
         />
       }
     >
-      {/* Header */}
+      {/* Header com botão exportar */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.headerGreeting}>Painel Administrativo</Text>
           <Text style={styles.headerDate}>{hoje}</Text>
         </View>
-        <View style={styles.headerBadge}>
-          <Text style={styles.headerBadgeText}>{BRAND.city}</Text>
+        <View style={styles.headerActions}>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>{BRAND.city}</Text>
+          </View>
         </View>
       </View>
 
-      {/* Stat Cards — linha 1 */}
+      <TouchableOpacity
+        style={[styles.exportBtn, exportando && { opacity: 0.6 }]}
+        onPress={handleExportar}
+        disabled={exportando}
+        activeOpacity={0.85}
+      >
+        {exportando ? (
+          <ActivityIndicator color={COLORS.dark} />
+        ) : (
+          <Text style={styles.exportBtnText}>📊  Exportar Excel</Text>
+        )}
+      </TouchableOpacity>
+
+      {/* ───── Painel de Faturamento ───── */}
+      <View style={styles.sectionDivider}>
+        <Text style={styles.sectionTitle}>Faturamento</Text>
+        <Text style={styles.sectionSubtitle}>
+          Apenas pedidos concluídos · variação vs. mês anterior
+        </Text>
+      </View>
+
+      <View style={styles.statsRow}>
+        <MetricCard
+          label="Faturamento total"
+          value={loading || !faturamento ? "—" : formatarValor(faturamento.totalAcumulado)}
+          icon="💰"
+          hint={`${faturamento?.pedidosConcluidos ?? 0} pedidos concluídos`}
+        />
+        <MetricCard
+          label="Faturamento do mês"
+          value={loading || !faturamento ? "—" : formatarValor(faturamento.faturamentoMes.valor)}
+          icon="📈"
+          variacaoPct={faturamento?.faturamentoMes.variacaoPct ?? null}
+        />
+      </View>
+
+      <View style={styles.statsRow}>
+        <MetricCard
+          label="Ticket médio"
+          value={loading || !faturamento ? "—" : formatarValor(faturamento.ticketMedio.valor)}
+          icon="🎯"
+          variacaoPct={faturamento?.ticketMedio.variacaoPct ?? null}
+        />
+        <MetricCard
+          label="Total de clientes"
+          value={loading || !faturamento ? "—" : String(faturamento.totalClientes.valor)}
+          icon="👥"
+          variacaoPct={faturamento?.totalClientes.variacaoPct ?? null}
+          hint="únicos com pedidos concluídos"
+        />
+      </View>
+
+      <RevenueChart data={serie6m} title="Faturamento — últimos 6 meses" />
+
+      <TopClientes clientes={topClientes} />
+
+      {/* ───── Operacional (mantido) ───── */}
+      <View style={styles.sectionDivider}>
+        <Text style={styles.sectionTitle}>Operacional</Text>
+        <Text style={styles.sectionSubtitle}>Status atual da operação</Text>
+      </View>
+
       <View style={styles.statsRow}>
         <StatCard
           label="Total de pedidos"
@@ -172,7 +267,6 @@ export default function AdminDashboard() {
         />
       </View>
 
-      {/* Stat Cards — linha 2 */}
       <View style={styles.statsRow}>
         <StatCard
           label="Pendentes"
@@ -190,7 +284,6 @@ export default function AdminDashboard() {
         />
       </View>
 
-      {/* Stat Cards — linha 3 */}
       <View style={styles.statsRow}>
         <StatCard
           label="Confirmados"
@@ -206,7 +299,6 @@ export default function AdminDashboard() {
         />
       </View>
 
-      {/* Ação rápida */}
       <TouchableOpacity
         style={styles.ctaBtn}
         onPress={() => router.push("/admin/pedidos" as never)}
@@ -215,7 +307,6 @@ export default function AdminDashboard() {
         <Text style={styles.ctaBtnText}>📋  Gerenciar todos os pedidos</Text>
       </TouchableOpacity>
 
-      {/* Pedidos recentes */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Pedidos recentes</Text>
@@ -248,8 +339,6 @@ export default function AdminDashboard() {
   );
 }
 
-// ─── Estilos ─────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -261,12 +350,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
-  // Header
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 4,
+    gap: 12,
+  },
+  headerActions: {
+    alignItems: "flex-end",
+    gap: 8,
   },
   headerGreeting: {
     color: COLORS.white,
@@ -293,7 +386,32 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Stat cards
+  exportBtn: {
+    backgroundColor: "#1B5E20",
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#2E7D32",
+  },
+  exportBtnText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  sectionDivider: {
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    color: COLORS.muted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+
   statsRow: {
     flexDirection: "row",
     gap: 12,
@@ -320,7 +438,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  // CTA button
   ctaBtn: {
     backgroundColor: COLORS.primary,
     borderRadius: 14,
@@ -334,7 +451,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // Section
   section: {
     marginTop: 8,
   },
@@ -393,7 +509,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Status pill
   statusPill: {
     flexDirection: "row",
     alignItems: "center",

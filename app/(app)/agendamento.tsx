@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { GlassCard } from "@/components/GlassCard";
+import { MagicLinkAccess } from "@/components/MagicLinkAccess";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { ScreenHeader } from "@/components/ScreenHeader";
@@ -97,6 +98,15 @@ export default function Agendamento() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!user) {
+    return (
+      <MagicLinkAccess
+        title="Valide seu e-mail"
+        subtitle="Enviaremos um link para voce acessar seu painel de servicos e finalizar o agendamento."
+      />
+    );
   }
 
   if (sucesso) {

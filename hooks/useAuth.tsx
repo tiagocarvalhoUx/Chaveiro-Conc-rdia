@@ -8,6 +8,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { Platform } from "react-native";
 
 import { supabase } from "@/lib/supabase";
 
@@ -16,6 +17,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  sendMagicLink: (email: string) => Promise<void>;
   signUp: (params: {
     email: string;
     password: string;
@@ -26,6 +28,18 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+function getAuthRedirectUrl() {
+  if (
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    window.location.origin
+  ) {
+    return `${window.location.origin}/home`;
+  }
+
+  return undefined;
+}
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
@@ -58,6 +72,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
+    });
+    if (error) throw error;
+  }, []);
+
+  const sendMagicLink = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: {
+        emailRedirectTo: getAuthRedirectUrl(),
+        shouldCreateUser: true,
+      },
     });
     if (error) throw error;
   }, []);
@@ -95,10 +120,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user: session?.user ?? null,
       loading,
       signIn,
+      sendMagicLink,
       signUp,
       signOut,
     }),
-    [session, loading, signIn, signUp, signOut]
+    [session, loading, signIn, sendMagicLink, signUp, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

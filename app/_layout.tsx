@@ -28,11 +28,10 @@ function RootStack() {
     const first = segments[0] as string | undefined;
     const inIntro = first === "intro" || first === undefined;
     const inAuth = first === "(auth)";
-    const inApp = first === "(app)";
     // Não redirecionar quando já estiver no painel admin
     const inAdmin = first === "admin";
 
-    if (!session && (inApp || inAdmin)) {
+    if (!session && inAdmin) {
       router.replace("/(auth)/login");
     } else if (session && (inAuth || inIntro)) {
       router.replace("/(app)/home");

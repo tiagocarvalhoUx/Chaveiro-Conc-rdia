@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 import { supabase } from "@/lib/supabase";
 
@@ -29,16 +30,33 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const productionSiteUrl =
+  process.env.EXPO_PUBLIC_SITE_URL ??
+  (Constants.expoConfig?.extra?.siteUrl as string | undefined) ??
+  "https://chaveiro-concordia.vercel.app";
+
+function normalizeSiteUrl(url: string) {
+  return url.replace(/\/+$/, "");
+}
+
 function getAuthRedirectUrl() {
+  const productionRedirectUrl = `${normalizeSiteUrl(productionSiteUrl)}/home`;
+
   if (
     Platform.OS === "web" &&
     typeof window !== "undefined" &&
     window.location.origin
   ) {
-    return `${window.location.origin}/home`;
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
+    return isLocalhost
+      ? productionRedirectUrl
+      : `${window.location.origin}/home`;
   }
 
-  return undefined;
+  return productionRedirectUrl;
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
